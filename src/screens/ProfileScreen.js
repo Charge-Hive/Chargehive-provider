@@ -9,14 +9,14 @@ import {
   StatusBar,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { logNavigation } from '../utils/analytics';
+import { logProfile } from '../utils/analytics';
 import { COLORS, FONT_SIZES, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { provider, logout } = useAuth();
 
   useEffect(() => {
-    logNavigation.screenChange('Profile Screen');
+    logProfile.screenOpened();
   }, []);
 
   const handleLogout = () => {
@@ -47,11 +47,11 @@ export default function ProfileScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <Text style={styles.avatarText}>
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+              {provider?.name?.charAt(0)?.toUpperCase() || 'P'}
             </Text>
           </View>
-          <Text style={styles.userName}>{user?.name || 'User'}</Text>
-          <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
+          <Text style={styles.userName}>{provider?.name || 'Provider'}</Text>
+          <Text style={styles.userEmail}>{provider?.email || 'provider@example.com'}</Text>
         </View>
 
         {/* Account Information */}
@@ -59,24 +59,24 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Account Information</Text>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Full Name</Text>
-            <Text style={styles.infoValue}>{user?.name || 'N/A'}</Text>
+            <Text style={styles.infoLabel}>Business Name</Text>
+            <Text style={styles.infoValue}>{provider?.name || 'N/A'}</Text>
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Email</Text>
-            <Text style={styles.infoValue}>{user?.email || 'N/A'}</Text>
+            <Text style={styles.infoValue}>{provider?.email || 'N/A'}</Text>
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Phone</Text>
-            <Text style={styles.infoValue}>{user?.phone || 'N/A'}</Text>
+            <Text style={styles.infoValue}>{provider?.phone || 'N/A'}</Text>
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Wallet Address</Text>
             <Text style={styles.infoValueSmall} numberOfLines={1}>
-              {user?.walletAddress || 'N/A'}
+              {provider?.wallet_address || 'N/A'}
             </Text>
           </View>
         </View>
@@ -92,7 +92,7 @@ export default function ProfileScreen() {
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Build</Text>
-            <Text style={styles.infoValue}>ChargeHive User</Text>
+            <Text style={styles.infoValue}>ChargeHive Provider</Text>
           </View>
         </View>
 
