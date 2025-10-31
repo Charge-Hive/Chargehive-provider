@@ -1,0 +1,184 @@
+import { useState, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  TouchableOpacity,
+  Text,
+  Platform,
+  StatusBar,
+} from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
+import { serviceAPI } from '../services/api';
+import { COLORS, FONT_SIZES, SPACING, SHADOWS } from '../constants/theme';
+
+export default function MapScreen() {
+  const [location, setLocation] = useState(null);
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadLocation();
+    loadServices();
+  }, []);
+
+  const loadLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required');
+        setLocation({
+          latitude: 37.7749,
+          longitude: -122.4194,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+        setLoading(false);
+        return;
+      }
+
+      const userLocation = await Location.getCurrentPositionAsync({});
+      setLocation({
+        latitude: userLocation.coords.latitude,
+        longitude: userLocation.coords.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    } catch (error) {
+      setLocation({
+        latitude: 37.7749,
+        longitude: -122.4194,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadServices = async () => {
+    try {
+      const response = await serviceAPI.getAllServices();
+      if (response.success && response.data) {
+        setServices(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading services:', error);
+    }
+  };
+
+  const handleRefresh = () => {
+    loadLocation();
+    loadServices();
+  };
+
+  if (loading || !location) {
+    return (
+      <View style={styles.loadingContainer}>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+        <ActivityIndicator size="large" color={COLORS.yellow} />
+        <Text style={styles.loadingText}>Loading map...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Provider Map</Text>
+        <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
+          <Ionicons name="refresh-outline" size={24} color={COLORS.yellow} />
+        </TouchableOpacity>
+      </View>
+
+      <MapView
+        provider={PROVIDER_GOOGLE}
+        style={styles.map}
+        initialRegion={location}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+        showsCompass={true}
+      >
+        {services.map((service) => (
+          <Marker
+            key={service.serviceId}
+            coordinate={{
+              latitude: parseFloat(service.latitude),
+              longitude: parseFloat(service.longitude),
+            }}
+          >
+            <View style={[
+              styles.markerContainer,
+              { backgroundColor: service.serviceType === 'parking' ? COLORS.parking : COLORS.charging }
+            ]}>
+              <Text style={styles.markerText}>
+                {service.serviceType === 'parking' ? 'P' : 'C'}
+              </Text>
+            </View>
+          </Marker>
+        ))}
+      </MapView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    paddingBottom: SPACING.md,
+    backgroundColor: COLORS.primary,
+  },
+  headerTitle: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: 'bold',
+    color: COLORS.yellow,
+    flex: 1,
+    textAlign: 'center',
+  },
+  refreshButton: {
+    padding: SPACING.sm,
+  },
+  map: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+  },
+  loadingText: {
+    marginTop: SPACING.lg,
+    fontSize: FONT_SIZES.base,
+    color: COLORS.textSecondary,
+  },
+  markerContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: COLORS.white,
+    ...SHADOWS.medium,
+  },
+  markerText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.xl,
+    fontWeight: 'bold',
+  },
+});
